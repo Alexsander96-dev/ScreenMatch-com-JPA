@@ -31,8 +31,10 @@ public class Serie {
     private String sinopse;
 
     //anotação para relacionamento com a tabela episodios, e o mapeamento para o spring
-    //no caso uma serie para muitos episodios,
-    @OneToMany(mappedBy = "serie")
+    //no caso uma serie para muitos episodios
+    //Adicionado cascade para o BD salvar os episiodios na tabela
+    //Adicionado fetch para trazer as entidades, no caso a lista de episodios, quando listar a serie
+    @OneToMany(mappedBy = "serie", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<Episodio> episodios = new ArrayList<>();
 
     //Construtor padrao que a jpa exige.
@@ -69,7 +71,9 @@ public class Serie {
         return episodios;
     }
 
+    //Adicionado o metodo forEach para o Jpa vincular a FK com a serie
     public void setEpisodios(List<Episodio> episodios) {
+        episodios.forEach(e -> e.setSerie(this));
         this.episodios = episodios;
     }
 
@@ -137,6 +141,7 @@ public class Serie {
                 ", avaliacao=" + avaliacao +
                 ", atores='" + atores + '\'' +
                 ", poster='" + poster + '\'' +
-                ", sinopse='" + sinopse + '\'';
+                ", sinopse='" + sinopse + '\'' +
+                ", episódios='" + episodios + '\'';
     }
 }

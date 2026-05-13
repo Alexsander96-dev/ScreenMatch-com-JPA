@@ -2,10 +2,7 @@ package com.alura.screenmacth.screenmatchComJpa.principal;
 
 
 
-import com.alura.screenmacth.screenmatchComJpa.model.DadosSerie;
-import com.alura.screenmacth.screenmatchComJpa.model.DadosTemporada;
-import com.alura.screenmacth.screenmatchComJpa.model.Episodio;
-import com.alura.screenmacth.screenmatchComJpa.model.Serie;
+import com.alura.screenmacth.screenmatchComJpa.model.*;
 import com.alura.screenmacth.screenmatchComJpa.repository.SerieRepository;
 import com.alura.screenmacth.screenmatchComJpa.service.ConsumoApi;
 import com.alura.screenmacth.screenmatchComJpa.service.ConverteDados;
@@ -39,7 +36,13 @@ public class Principal {
             var menu = """
                     1 - Buscar séries
                     2 - Buscar episódios
-                    3 - Lista de Séries buscadas
+                    3 - Lista de séries buscadas
+                    4 - Buscar série pelo titulo
+                    5 - Buscar série pelo ator
+                    6 - Top 5 Séries
+                    7 - Buscar série por Categoria
+                    8 - Buscar série por temporadas e avaliação
+                    
                     
                     
                     0 - Sair                                 
@@ -59,6 +62,21 @@ public class Principal {
                 case 3:
                     listarSeriesBuscadas();
                     break;
+                case 4:
+                    buscarSeriePeloTitulo();
+                    break;
+                case 5:
+                    buscarSeriePeloAtor();
+                    break;
+                case 6:
+                    buscarTop5Serie();
+                    break;
+                case 7:
+                    buscarSeriePorCategoria();
+                    break;
+                case 8:
+                    buscarSeriePorTemporadaEAvaliacao();
+                    break;
                 case 0:
                     System.out.println("Saindo...");
                     break;
@@ -67,6 +85,7 @@ public class Principal {
             }
         }
     }
+
 
     //menu alterado para salvar serie no BD
     private void buscarSerieWeb() {
@@ -95,9 +114,7 @@ public class Principal {
         System.out.println("Escolha a serie pelo nome: ");
         var nomeSerie = leitura.nextLine();
 
-        Optional<Serie> serie = series.stream()
-                .filter(s -> s.getTitulo().toLowerCase().contains(nomeSerie.toLowerCase()))
-                .findFirst();
+        Optional<Serie> serie = repositorio.findByTituloContainingIgnoreCase(nomeSerie);
 
         if (serie.isPresent()) {
             var serieEncontrada = serie.get();
@@ -118,20 +135,89 @@ public class Principal {
 
             serieEncontrada.setEpisodios(episodios);
             repositorio.save(serieEncontrada);
-        }else {
+        } else {
             System.out.println("Série não encontrada!");
         }
     }
+
     //metodo mudado, para buscar as series salvas no BD
     //mudou o list<Serie> para series para variavel ser local e utilizada em outros metodos
     //para poder usar as lista buscadas no BD
-    private void listarSeriesBuscadas(){
+    private void listarSeriesBuscadas() {
         series = repositorio.findAll();
         //pega a lista criada orgazina
         //compara por genero e orgazina
         //depois imprimi cada serie armazenada
-       series.stream()
-               .sorted(Comparator.comparing(Serie::getGenero))
-               .forEach(System.out::println);
+        series.stream()
+                .sorted(Comparator.comparing(Serie::getGenero))
+                .forEach(System.out::println);
     }
+
+    //Adicionado metodo para buscar o titulo da serie
+    //deixando o Jpa buscar automaticamente com o findBy
+    private void buscarSeriePeloTitulo() {
+        System.out.println("Digite o nome da série para busca: ");
+        var nomeSerie = leitura.nextLine();
+
+        Optional<Serie> serieBuscada = repositorio.findByTituloContainingIgnoreCase(nomeSerie);
+
+        if (serieBuscada.isPresent()) {
+            System.out.println("Dados da Série: " + serieBuscada.get());
+        } else {
+            System.out.println("Série não encontrada! ");
+        }
+    }
+
+    private void buscarSeriePeloAtor() {
+        System.out.println("Digite o nome do ator para a busca: ");
+        var nomeAtor = leitura.nextLine();
+
+        System.out.println("Digite o valor da avaliação da série: ");
+        double avaliacao = leitura.nextDouble();
+
+        List<Serie> serieBuscada = repositorio.findByAtoresContainingIgnoreCaseAndAvaliacaoGreaterThanEqual(nomeAtor, avaliacao);
+
+        System.out.println("Série que o " + nomeAtor + " trabalhou: ");
+        serieBuscada.forEach(s ->
+                System.out.println(s.getTitulo() + " avaliação: " + s.getAvaliacao()
+                ));
+    }
+
+    private void buscarTop5Serie() {
+        List<Serie> topSeries = repositorio.findTop5ByOrderByAvaliacaoDesc();
+
+        topSeries.forEach(s ->
+                System.out.println(s.getTitulo() + " avaliação: " + s.getAvaliacao()
+                ));
+    }
+
+    private void buscarSeriePorCategoria() {
+        System.out.println("Digite a categoria/gênero que deseja buscar: ");
+        var nomeGenero = leitura.nextLine();
+
+        Categoria categoria = Categoria.fromPortugues(nomeGenero);
+
+        List<Serie> serieCategoria = repositorio.findByGenero
+                (categoria);
+        System.out.println("Séries da categoria: " + nomeGenero);
+        serieCategoria.forEach(System.out::println);
+    }
+
+    private void buscarSeriePorTemporadaEAvaliacao(){
+        System.out.println("Filtrar série por quantas temporadas?(ex: 3) ");
+        int totalTemporadas = leitura.nextInt();
+
+        System.out.println("Com avaliação a partir de que nota?(ex: 9,5) ");
+        double avaliacao = leitura.nextDouble();
+
+        List<Serie> filtroSerie = repositorio.findByTotalTemporadasLessThanEqualAndAvaliacaoGreaterThanEqual(totalTemporadas,avaliacao);
+
+        System.out.println("*----------Séries Filtradas----------------*");
+
+        filtroSerie.forEach(serie -> System.out.println(serie.getTitulo() + " - avaliação: " + serie.getAvaliacao()));
+    }
+
+
 }
+
+

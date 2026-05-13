@@ -22,7 +22,8 @@ public class Episodio {
     @ManyToOne
     private Serie serie;
 
-
+    //construtor padrao que  a jpa exige
+    public Episodio(){}
 
     public Episodio(Integer numeroTemporada, DadosEpisodio dadosEpisodio) {
         this.temporada = numeroTemporada;
